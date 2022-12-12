@@ -6,7 +6,7 @@ Future<UserModel> fetchDataFromNetwork() async {
     Response response;
 
     try {
-      response = await Dio().get('https://randomuser.me/api/?results=10');
+      response = await Dio().get('https://randomuser.me/api/?results=100');
 
       debugPrint(response.toString());
     } catch (e) {
