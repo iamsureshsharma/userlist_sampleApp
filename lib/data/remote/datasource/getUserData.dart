@@ -1,10 +1,14 @@
-  import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:new_app/data/models/user_model.dart';
 
 Future<UserModel> fetchDataFromNetwork() async {
-    Response response;
+  Response response;
 
+  // perform the connection check
+
+  if (await InternetConnectionChecker().hasConnection) {
     try {
       response = await Dio().get('https://randomuser.me/api/?results=100');
 
@@ -22,3 +26,5 @@ Future<UserModel> fetchDataFromNetwork() async {
       return UserModel.withError('Error Occured while fetching the data');
     }
   }
+  return UserModel.withError('Check the network connection');
+}
