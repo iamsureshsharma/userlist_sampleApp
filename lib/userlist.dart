@@ -1,9 +1,8 @@
-import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:new_app/data/local/database/user_db.dart';
 import 'package:new_app/data/models/user_model.dart';
 import 'package:new_app/data/remote/datasource/getUserData.dart';
+import 'package:new_app/helper.dart';
 import 'package:new_app/main.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -23,16 +22,11 @@ class _UserListState extends State<UserList> {
   @override
   void initState() {
     db = Database();
-    getDataFromDB();
-    getConnectionStatus().then((value) {
-      if (value) {
-        initialiseWorkmanager();
-        fetchDataFromNetwork().then((userModel) async {
-          await db.deleteAllUser();
-          saveDataInDB(userModel);
-          getDataFromDB();
-        });
-      }
+    initialiseWorkmanager();
+    fetchDataFromNetwork().then((userModel) async {
+      await db.deleteAllUser();
+      Helper.saveDataInDB(userModel, db);
+      Helper.getDataFromDB(db);
     });
     super.initState();
   }
@@ -41,18 +35,12 @@ class _UserListState extends State<UserList> {
   void didChangeDependencies() {
     db = Database();
     super.didChangeDependencies();
-    getDataFromDB();
+    Helper.getDataFromDB(db);
   }
 
   initialiseWorkmanager() {
     Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
     Workmanager().registerOneOffTask('this is unique name', '');
-  }
-
-// perform the connection check
-  Future<bool> getConnectionStatus() async {
-    connected = await InternetConnectionChecker().hasConnection;
-    return connected;
   }
 
   @override
@@ -91,33 +79,5 @@ class _UserListState extends State<UserList> {
         ),
       ),
     );
-  }
-
-  void getDataFromDB() async {
-    List<UserData> userlist = await db.getUserList();
-
-    if (userlist.isNotEmpty) {
-      offlineUserList.clear();
-      for (var element in userlist) {
-        offlineUserList.add(element);
-      }
-      print(offlineUserList.toString());
-      setState(() {});
-    }
-  }
-
-  void saveDataInDB(UserModel userModel) {
-    offlineUserList.clear();
-    db.deleteAllUser();
-    userModel.results?.forEach((user) async {
-      final entity = UserCompanion(
-        name: drift.Value('${user.name?.first}' '${user.name?.last}'),
-        address: drift.Value('${user.location?.street?.name!}' '${user.location?.city}' '${user.location?.state}'),
-        emailAddress: drift.Value(user.email!),
-      );
-      await db.addUser(entity);
-      print('DB data saved');
-    });
-    setState(() {});
   }
 }
